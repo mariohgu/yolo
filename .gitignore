@@ -1,0 +1,12 @@
+/venv
+/workspace/train/runs/
+/workspace/dataset/recoleccion/img/
+/workspace/dataset/recoleccion/imgs/
+*.pt
+*.pyc
+*.jpg
+*.jpeg
+*.png
+*.txt
+*.csv
+/__pycache__
