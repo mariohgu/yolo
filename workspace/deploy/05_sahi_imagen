@@ -1,0 +1,70 @@
+# Import necessary libraries
+from sahi.utils.yolov8 import download_yolov8s_model
+from sahi import AutoDetectionModel
+from sahi.utils.cv import read_image  # Corrected the typo here
+from sahi.utils.file import download_from_url
+from sahi.predict import get_prediction, get_sliced_prediction, predict
+from sahi.prediction import visualize_object_predictions
+import numpy as np  # Use numpy directly for array operations
+import torch
+import cv2
+import matplotlib.pyplot as plt  # For visualizing the final image instead of IPython.display.Image
+
+# Download the YOLOv8 model
+yolov8_model_path = "path.pt"
+download_yolov8s_model(destination_path=yolov8_model_path)
+
+# Download images
+download_from_url("url", "path")
+
+# Set up device
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+# Initialize the detection model
+detection_model = AutoDetectionModel.from_pretrained(
+    model_type="yolov8",
+    model_path=yolov8_model_path,
+    confidence_threshold=0.3,  # Corrected typo here
+    device=device,
+)
+
+# Perform a prediction
+result = get_prediction(
+    "path/photo1.jpg", detection_model
+)  # Assuming the file format is .jpg
+result.export_visuals(export_dir="demo_data/")
+
+# For displaying the image, use matplotlib
+image_path = "demo_data/prediction_visual.png"
+img = plt.imread(image_path)
+plt.imshow(img)
+plt.show()
+
+# Perform sliced inference with Sahi
+result = get_sliced_prediction(
+    image_path="demo_data/nombre.png",  # Corrected syntax error here
+    detection_model=detection_model,
+    slice_height=128,
+    slice_width=128,
+    overlap_height_ratio=0.7,
+    overlap_width_ratio=0.7,
+)
+
+# Visualize predicted bounding boxes
+img = cv2.imread("demo_data/image.png", cv2.IMREAD_UNCHANGED)
+img_converted = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+numpydata = np.asarray(img_converted)  # Corrected function name and package reference
+visualize_object_predictions(
+    numpydata,
+    object_prediction_list=result.object_prediction_list,
+    hide_labels=True,  # Assuming this should be a boolean
+    output_dir="demo_data",
+    file_name="result.png",  # Corrected syntax error
+    export_format="png",
+)
+
+# For displaying the final result image, use matplotlib
+final_image_path = "demo_data/result.png"
+final_img = plt.imread(final_image_path)
+plt.imshow(final_img)
+plt.show()
