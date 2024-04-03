@@ -3,6 +3,7 @@ import glob
 import os
 import json
 
+
 def xml_to_yolo_bbox(bbox, w, h):
     # xmin, ymin, xmax, ymax
     x_center = ((bbox[2] + bbox[0]) / 2) / w
@@ -29,10 +30,11 @@ output_dir = "labels/"
 image_dir = "images/"
 
 # create the labels folder (output directory)
-os.mkdir(output_dir)
+if not os.path.exists(output_dir):
+    os.mkdir(output_dir)
 # identify all the xml files in the annotations folder (input directory)
-files = glob.glob(os.path.join(input_dir, '*.xml'))
-# loop through each 
+files = glob.glob(os.path.join(input_dir, "*.xml"))
+# loop through each
 for fil in files:
     basename = os.path.basename(fil)
     filename = os.path.splitext(basename)[0]
@@ -49,8 +51,7 @@ for fil in files:
     width = int(root.find("size").find("width").text)
     height = int(root.find("size").find("height").text)
 
-
-    for obj in root.findall('object'):
+    for obj in root.findall("object"):
         label = obj.find("name").text
         # check for new classes and append to list
         if label not in classes:
@@ -64,9 +65,11 @@ for fil in files:
 
     if result:
         # generate a YOLO format text file for each xml file
-        with open(os.path.join(output_dir, f"{filename}.txt"), "w", encoding="utf-8") as f:
+        with open(
+            os.path.join(output_dir, f"{filename}.txt"), "w", encoding="utf-8"
+        ) as f:
             f.write("\n".join(result))
 
 # generate the classes file as reference
-with open('classes.txt', 'w', encoding='utf-8') as f:
+with open("classes.txt", "w", encoding="utf-8") as f:
     f.write(json.dumps(classes))

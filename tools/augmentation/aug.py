@@ -11,123 +11,139 @@ import numpy as np
 cwd = os.path.dirname(os.path.abspath(__file__))
 #### Define control variables and parse user inputs
 parser = argparse.ArgumentParser()
-parser.add_argument('--imgdir', help='Folder containing images to augment', default=cwd+'\input')
-                    #required=True)
-parser.add_argument('--imgext', help='File extension of images (for example, .JPG)',
-                    default='.jpg')
-parser.add_argument('--labels', help='Text file with list of classes', default=cwd+'\labels.txt')
-                    #required=True)
-parser.add_argument('--num', help='Number of augmented images to create from each original image',
-                    default=7)
-parser.add_argument('--debug', help='Displays every augmented image when enabled',
-                    default=False)
-parser.add_argument('--dirout', help='Folder output', default=cwd+'\output')
+parser.add_argument(
+    "--imgdir", help="Folder containing images to augment", default=cwd + "\input"
+)
+# required=True)
+parser.add_argument(
+    "--imgext", help="File extension of images (for example, .JPG)", default=".jpg"
+)
+parser.add_argument(
+    "--labels", help="Text file with list of classes", default=cwd + "\labels.txt"
+)
+# required=True)
+parser.add_argument(
+    "--num",
+    help="Number of augmented images to create from each original image",
+    default=7,
+)
+parser.add_argument(
+    "--debug", help="Displays every augmented image when enabled", default=False
+)
+parser.add_argument("--dirout", help="Folder output", default=cwd + "\output")
 
 args = parser.parse_args()
 
-DIR_OUT=args.dirout
+DIR_OUT = args.dirout
 if not os.path.isdir(DIR_OUT):
-    print('%s is not a valid directory.' % DIR_OUT)
+    print("%s is not a valid directory." % DIR_OUT)
     sys.exit(1)
 IMG_DIR = args.imgdir
 if not os.path.isdir(IMG_DIR):
-    print('%s is not a valid directory.' % IMG_DIR)
+    print("%s is not a valid directory." % IMG_DIR)
     sys.exit(1)
 IMG_EXTENSION = args.imgext
 LABEL_FN = args.labels
 if not os.path.isfile(LABEL_FN):
-    print('%s is not a valid file path.' % LABEL_FN)
+    print("%s is not a valid file path." % LABEL_FN)
     sys.exit(1)
 NUM_AUG_IMAGES = args.num
 debug = args.debug
-#cwd = os.getcwd()
-
-
+# cwd = os.getcwd()
 
 
 #### Define augmentation sequence ####
 # This can be tweaked to create a huge variety of image augmentations.
 # See https://github.com/aleju/imgaug for a list of augmentation techniques available.
-matrix = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]])
+matrix = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
 
-seq1 = iaa.Sequential([
-    iaa.Resize({"height": 320, "width": 320}),  #resize image
-# 
-    iaa.Add((-25, 25), per_channel=0.5), # change brightness of images (by -10 to 10 of original value)
-    iaa.Fliplr(0.5),            # Horizontal flip 50% of images
-    
-  #  iaa.Rot90((1, 3)),           #rotate
-    #iaa.CoarseDropout(p=0.02, size_percent=0.5,per_channel=True),   #Generates a dropout mask at 5 to 50 percent of each input image’s size.                          
-    #iaa.Crop(percent=(0, 0.20)),                # Crop all images between 0% to 20%                
-   # iaa.GaussianBlur(sigma=(0, 1)),             # Add slight blur to images
-    #iaa.LinearContrast((0.6,1.4)),             #Add Linear contrast 
-    iaa.Multiply((0.7, 1.3), per_channel=0.2),  # Slightly brighten, darken, or recolor images
-   # iaa.Convolve(matrix=matrix),                #sharpener
-    iaa.Sometimes(0.6,
-        iaa.GaussianBlur((0.0, 1.0)),             # Add slight blur to images
-        iaa.Flipud(0.5),
-        #  iaa.PiecewiseAffine(scale=(0.01, 0.05)), # sometimes move parts of the image around
-    ),
+seq1 = iaa.Sequential(
+    [
+        iaa.Resize({"height": 640, "width": 640}),  # resize image
+        #
+        iaa.Add(
+            (-35, 35), per_channel=0.5
+        ),  # change brightness of images (by -10 to 10 of original value)
+        iaa.Fliplr(0.5),  # Horizontal flip 50% of images
+        #  iaa.Rot90((1, 3)),           #rotate
+        # iaa.CoarseDropout(p=0.02, size_percent=0.5,per_channel=True),   #Generates a dropout mask at 5 to 50 percent of each input image’s size.
+        # iaa.Crop(percent=(0, 0.20)),                # Crop all images between 0% to 20%
+        # iaa.GaussianBlur(sigma=(0, 1)),             # Add slight blur to images
+        # iaa.LinearContrast((0.6, 1.4)),  # Add Linear contrast
+        iaa.Multiply(
+            (0.7, 2.3), per_channel=0.8
+        ),  # Slightly brighten, darken, or recolor images
+        # iaa.Convolve(matrix=matrix),                #sharpener
+        iaa.Sometimes(
+            0.6,
+            iaa.GaussianBlur((0.0, 1.0)),  # Add slight blur to images
+            iaa.Flipud(0.5),
+            #  iaa.PiecewiseAffine(scale=(0.01, 0.05)), # sometimes move parts of the image around
+        ),
+        iaa.Affine(
+            #      scale={"x": (0.8, 1.0), "y": (0.8,1.0)},                # Resize image
+            ##        translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, # Translate image
+            rotate=(-45, 45),  # Rotate image
+            #     mode=ia.ALL, cval=(125)
+        ),  # Filling in extra pixels
+    ]
+)
 
-    iaa.Affine(
-  #      scale={"x": (0.8, 1.0), "y": (0.8,1.0)},                # Resize image
-##        translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)}, # Translate image
-        rotate=(-45, 45),                                         # Rotate image
-   #     mode=ia.ALL, cval=(125)
-   )                             # Filling in extra pixels
-
-
-    
-    ])
 
 #### Function definitions ####
 # Function for reading annotation data from a XML file
 def read_annotation_data(xml_fn):
-    file = open(xml_fn,'r')#, encoding='ISO-8859-1'
+    file = open(xml_fn, "r")  # , encoding='ISO-8859-1'
     tree = ET.parse(file)
     root = tree.getroot()
-    size = root.find('size')
-    imw = int(size.find('width').text)
-    imh = int(size.find('height').text)
+    size = root.find("size")
+    imw = int(size.find("width").text)
+    imh = int(size.find("height").text)
     objects = []
-    
-    for obj in root.iter('object'):
-        difficult = obj.find('difficult').text
-        cls = obj.find('name').text
+
+    for obj in root.iter("object"):
+        difficult = obj.find("difficult").text
+        cls = obj.find("name").text
         if cls not in classes or int(difficult) == 1:
             continue
         cls_id = classes.index(cls)
-        xmlbox = obj.find('bndbox')
-        xmin = int(xmlbox.find('xmin').text)
-        xmax = int(xmlbox.find('xmax').text)
-        ymin = int(xmlbox.find('ymin').text)
-        ymax = int(xmlbox.find('ymax').text)
-        bb = [(xmin,ymin),(xmax,ymin),(xmax, ymax),(xmin,ymax)] # Top left, top right, bottom right, bottom left
-        objects.append([cls,bb])
+        xmlbox = obj.find("bndbox")
+        xmin = int(xmlbox.find("xmin").text)
+        xmax = int(xmlbox.find("xmax").text)
+        ymin = int(xmlbox.find("ymin").text)
+        ymax = int(xmlbox.find("ymax").text)
+        bb = [
+            (xmin, ymin),
+            (xmax, ymin),
+            (xmax, ymax),
+            (xmin, ymax),
+        ]  # Top left, top right, bottom right, bottom left
+        objects.append([cls, bb])
 
     return imw, imh, objects
-    
+
 
 # Function for finding bounding box from keypoints
-def kps_to_BB(kps,imgW,imgH):
+def kps_to_BB(kps, imgW, imgH):
     """
-        Determine imgaug bounding box from imgaug keypoints
+    Determine imgaug bounding box from imgaug keypoints
     """
-    extend=1 # To make the bounding box a little bit bigger
-    kpsx=[kp[0] for kp in kps]
-    xmin=max(0,int(min(kpsx)-extend))
-    xmax=min(imgW,int(max(kpsx)+extend))
-    kpsy=[kp[1] for kp in kps]
-    ymin=max(0,int(min(kpsy)-extend))
-    ymax=min(imgH,int(max(kpsy)+extend))
-    if xmin==xmax or ymin==ymax:
+    extend = 1  # To make the bounding box a little bit bigger
+    kpsx = [kp[0] for kp in kps]
+    xmin = max(0, int(min(kpsx) - extend))
+    xmax = min(imgW, int(max(kpsx) + extend))
+    kpsy = [kp[1] for kp in kps]
+    ymin = max(0, int(min(kpsy) - extend))
+    ymax = min(imgH, int(max(kpsy) + extend))
+    if xmin == xmax or ymin == ymax:
         return None
     else:
-        #return ia.BoundingBox(x1=xmin,y1=ymin,x2=xmax,y2=ymax)
-        return [(xmin, ymin),(xmax, ymax)]
+        # return ia.BoundingBox(x1=xmin,y1=ymin,x2=xmax,y2=ymax)
+        return [(xmin, ymin), (xmax, ymax)]
+
 
 # Define XML annotation format for creating new XML files
-xml_body_1="""<annotation>
+xml_body_1 = """<annotation>
         <folder>{FOLDER}</folder>
         <filename>{FILENAME}</filename>
         <path>{PATH}</path>
@@ -140,7 +156,7 @@ xml_body_1="""<annotation>
                 <depth>3</depth>
         </size>
 """
-xml_object=""" <object>
+xml_object = """ <object>
                 <name>{CLASS}</name>
                 <pose>Unspecified</pose>
                 <truncated>0</truncated>
@@ -153,8 +169,9 @@ xml_object=""" <object>
                 </bndbox>
         </object>
 """
-xml_body_2="""</annotation>        
+xml_body_2 = """</annotation>        
 """
+
 
 # Function to create XML files
 def create_xml(folder, image_path, xml_path, size, imBBs):
@@ -164,13 +181,31 @@ def create_xml(folder, image_path, xml_path, size, imBBs):
     image_fn = os.path.split(image_path)[-1]
 
     # Create XML file and write data
-    with open(xml_path,'w') as f:
-        f.write(xml_body_1.format(**{'FOLDER':folder, 'FILENAME':image_fn, 'PATH':image_path,
-                                     'WIDTH':imW, 'HEIGHT':imH}))
+    with open(xml_path, "w") as f:
+        f.write(
+            xml_body_1.format(
+                **{
+                    "FOLDER": folder,
+                    "FILENAME": image_fn,
+                    "PATH": image_path,
+                    "WIDTH": imW,
+                    "HEIGHT": imH,
+                }
+            )
+        )
 
         for bbox in imBBs:
-            f.write(xml_object.format(**{'CLASS':bbox[0], 'XMIN':bbox[1][0], 'YMIN':bbox[1][1],
-                                          'XMAX':bbox[1][2], 'YMAX':bbox[1][3]}))
+            f.write(
+                xml_object.format(
+                    **{
+                        "CLASS": bbox[0],
+                        "XMIN": bbox[1][0],
+                        "YMIN": bbox[1][1],
+                        "XMAX": bbox[1][2],
+                        "YMAX": bbox[1][3],
+                    }
+                )
+            )
 
         f.write(xml_body_2)
 
@@ -180,12 +215,14 @@ def create_xml(folder, image_path, xml_path, size, imBBs):
 #### Start of main program ####
 
 # Load classes from labelmap. Labelmap is a text file listing class names, with a newline between each class
-with open(LABEL_FN,'r') as file:
-    labels=file.read().split('\n')
-classes = [label for label in labels if label!=''] # Remove blank labels (happens when there are extra lines at the end of the file)
+with open(LABEL_FN, "r") as file:
+    labels = file.read().split("\n")
+classes = [
+    label for label in labels if label != ""
+]  # Remove blank labels (happens when there are extra lines at the end of the file)
 
 # Obtain list of images in IMG_DIR directory
-img_fns = glob(IMG_DIR + '/*' + IMG_EXTENSION)
+img_fns = glob(IMG_DIR + "/*" + IMG_EXTENSION)
 
 # Go through every image in directory, augment it, and save new image/annotation data
 for img_fn in img_fns:
@@ -194,23 +231,26 @@ for img_fn in img_fns:
     original_img = cv2.imread(img_fn)
     imgH, imgW, _ = original_img.shape
     base_img_fn = os.path.split(img_fn)[-1]
-    base_fn = base_img_fn.replace(IMG_EXTENSION,'')
+    base_fn = base_img_fn.replace(IMG_EXTENSION, "")
 
     # Read annotation data from image's corresponding XML file
-    xml_fn = img_fn.replace(IMG_EXTENSION,'.xml')
+    xml_fn = img_fn.replace(IMG_EXTENSION, ".xml")
     imgW_xml, imgH_xml, objects = read_annotation_data(xml_fn)
-    if ((imgW_xml != imgW) or (imgH_xml != imgH)):
-        print('Warning! Annotation data does not match image data for %s. Skipping image.' % img_fn)
+    if (imgW_xml != imgW) or (imgH_xml != imgH):
+        print(
+            "Warning! Annotation data does not match image data for %s. Skipping image."
+            % img_fn
+        )
         continue
     im_kps = []
     im_classes = []
     num_obj = len(objects)
     for obj in objects:
         im_classes.append(obj[0])
-        im_kps.append(obj[1][0]) # Top left corner
-        im_kps.append(obj[1][1]) # Top right corner
-        im_kps.append(obj[1][2]) # Bottom right corner
-        im_kps.append(obj[1][3]) # Bottom left corner
+        im_kps.append(obj[1][0])  # Top left corner
+        im_kps.append(obj[1][1])  # Top right corner
+        im_kps.append(obj[1][2])  # Bottom right corner
+        im_kps.append(obj[1][3])  # Bottom left corner
 
     # Define keypoints on image
     ia_kps = [ia.Keypoint(x=p[0], y=p[1]) for p in im_kps]
@@ -219,18 +259,18 @@ for img_fn in img_fns:
     # Define bounding boxes on original image (not needed for augmentation, but used for displaying later if debug == True)
     bboxes = []
     for i in range(num_obj):
-        obj_kps = im_kps[i*4:(i*4+4)]
-        bboxes.append(kps_to_BB(obj_kps,imgW,imgH))
+        obj_kps = im_kps[i * 4 : (i * 4 + 4)]
+        bboxes.append(kps_to_BB(obj_kps, imgW, imgH))
 
     # Create new augmented images, and save them in folder with annotation data
     for n in range(int(NUM_AUG_IMAGES)):
 
         # Define new filenames
-        
-        img_aug_fn = base_fn + ('_aug%d' % (n+1)) + IMG_EXTENSION
-        img_aug_path = os.path.join(cwd,DIR_OUT,img_aug_fn)
-        xml_aug_fn = img_aug_fn.replace(IMG_EXTENSION,'.xml')
-        xml_aug_path = os.path.join(cwd,DIR_OUT,xml_aug_fn)
+
+        img_aug_fn = base_fn + ("_aug%d" % (n + 1)) + IMG_EXTENSION
+        img_aug_path = os.path.join(cwd, DIR_OUT, img_aug_fn)
+        xml_aug_fn = img_aug_fn.replace(IMG_EXTENSION, ".xml")
+        xml_aug_path = os.path.join(cwd, DIR_OUT, xml_aug_fn)
 
         # Augment image and keypoints.
         # First, copy original image and keypoints
@@ -250,21 +290,31 @@ for img_fn in img_fns:
 
         # Loop over every object, determine bounding boxes for new KPs, and save annotation data
         for i in range(num_obj):
-            obj_aug_kps = list_kps_aug[i*4:(i*4+4)] # Augmented keypoints for each object
-            obj_bb = kps_to_BB(obj_aug_kps,imgW_aug,imgH_aug) # Augmented bounding boxes for each object
-            if obj_bb: # Sometimes the bbox coordinates are invalid and obj_bb is empty, so need to check if obj_bb valid
-                bboxes_aug.append(obj_bb) # List of bounding boxes for each object
+            obj_aug_kps = list_kps_aug[
+                i * 4 : (i * 4 + 4)
+            ]  # Augmented keypoints for each object
+            obj_bb = kps_to_BB(
+                obj_aug_kps, imgW_aug, imgH_aug
+            )  # Augmented bounding boxes for each object
+            if (
+                obj_bb
+            ):  # Sometimes the bbox coordinates are invalid and obj_bb is empty, so need to check if obj_bb valid
+                bboxes_aug.append(obj_bb)  # List of bounding boxes for each object
                 xmin = int(obj_bb[0][0])
                 ymin = int(obj_bb[0][1])
                 xmax = int(obj_bb[1][0])
                 ymax = int(obj_bb[1][1])
                 coords = [xmin, ymin, xmax, ymax]
                 label = im_classes[i]
-                bboxes_aug_data.append([label, coords]) # List of bounding box data for each object (class name and box coordinates)
+                bboxes_aug_data.append(
+                    [label, coords]
+                )  # List of bounding box data for each object (class name and box coordinates)
 
         # Save image and XML files to hard disk
-        cv2.imwrite(img_aug_path,img_aug)
-        create_xml(DIR_OUT, img_aug_fn, xml_aug_path, [imgH_aug,imgW_aug], bboxes_aug_data)
+        cv2.imwrite(img_aug_path, img_aug)
+        create_xml(
+            DIR_OUT, img_aug_fn, xml_aug_path, [imgH_aug, imgW_aug], bboxes_aug_data
+        )
 
         # Display original and augmented images with keypoints (if debug is enabled)
         if debug:
@@ -274,21 +324,21 @@ for img_fn in img_fns:
 
             # Draw keypoints and BBs on normal image
             for bb in bboxes:
-                cv2.rectangle(img_show, bb[0], bb[1], (50,255,50), 5)
+                cv2.rectangle(img_show, bb[0], bb[1], (50, 255, 50), 5)
             for kp in im_kps:
-                cv2.circle(img_show,kp, 8, (255,255,0), -1)
-                cv2.circle(img_show,kp, 9, (10,10,10), 2)
+                cv2.circle(img_show, kp, 8, (255, 255, 0), -1)
+                cv2.circle(img_show, kp, 9, (10, 10, 10), 2)
 
             # Draw keypoints and BBs on augmented image
             for bb in bboxes_aug:
-                cv2.rectangle(img_aug_show, bb[0], bb[1], (50,255,50), 5)
+                cv2.rectangle(img_aug_show, bb[0], bb[1], (50, 255, 50), 5)
             for kp in list_kps_aug:
-                cv2.circle(img_aug_show,kp, 10, (255,255,0), -1)
-                cv2.circle(img_aug_show,kp, 10, (10,10,10), 2)
+                cv2.circle(img_aug_show, kp, 10, (255, 255, 0), -1)
+                cv2.circle(img_aug_show, kp, 10, (10, 10, 10), 2)
 
             if n == 0:
-                cv2.imshow('Normal',img_show)
-            cv2.imshow('Augmented %d' % n,img_aug_show)
+                cv2.imshow("Normal", img_show)
+            cv2.imshow("Augmented %d" % n, img_aug_show)
             cv2.waitKey()
 
 # If images were displayed, close them at the end of the program

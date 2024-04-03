@@ -9,4 +9,6 @@
 *.png
 *.txt
 *.csv
+*.xml
+*.mp4
 /__pycache__
